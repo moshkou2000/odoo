@@ -106,7 +106,7 @@ class EmailAuthLogin(OAuthLogin):
                     werkzeug.urls.url_encode(query),
                 )
                 template = request.env.ref(
-                    "auth_email_link.mail_template_email_login",
+                    "auth_email_link.mail_template_email_login_v4",
                     raise_if_not_found=False,
                 )
                 if template:
