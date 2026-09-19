@@ -69,6 +69,12 @@ class EmailAuthLogin(OAuthLogin):
 
     def _add_auth_context(self, response, mode):
         response.qcontext["auth_email_login_mode"] = mode
+        response.qcontext["auth_email_link_magic_view"] = (
+            mode == "both" and request.params.get("auth_view") == "magic"
+        )
+        response.qcontext["auth_email_alert_view"] = (
+            "magic" if request.params.get("auth_view") == "magic" else "password"
+        )
         response.qcontext["auth_email_admin_ready"] = _outbound_email_ready()
         response.qcontext["auth_oauth_admin_ready"] = _admin_has_active_oauth()
 
@@ -129,7 +135,9 @@ class EmailAuthLogin(OAuthLogin):
                     _logger.error("Email login template is missing")
 
         query = {
-            "message": _("If an account exists for that email, a login link has been sent.")
+            "message": _("If an account exists for that email, a login link has been sent."),
+            # Keep the switchable form on the magic-link side after POST/redirect.
+            "auth_view": "magic",
         }
         if redirect:
             query["redirect"] = redirect
@@ -169,7 +177,8 @@ class EmailLoginController(http.Controller):
             _logger.info("Invalid or expired email login token")
             return request.redirect(
                 "/web/login?%s" % werkzeug.urls.url_encode({
-                    "error": _("This login link is invalid or has expired.")
+                    "error": _("This login link is invalid or has expired."),
+                    "auth_view": "magic",
                 }),
                 303,
             )
