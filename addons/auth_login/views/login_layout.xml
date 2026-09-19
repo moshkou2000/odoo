@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="login_layout_web"
+              inherit_id="web.login_layout"
+              name="Web Login Layout Override"
+              priority="99">
+        <xpath expr="//t[@t-call][1]" position="attributes">
+            <attribute name="t-call">web.frontend_layout</attribute>
+        </xpath>
+    </template>
+</odoo>

@@ -1620,14 +1620,13 @@
 </template>
 
 <!-- Features template -->
-<!-- no website login, use web login -->
-<!-- <template id="login_layout" inherit_id="web.login_layout" name="Website Login Layout" priority="20">
+<template id="login_layout" inherit_id="web.login_layout" name="Website Login Layout" priority="20">
     <xpath expr="t[@t-call]" position="replace">
         <t t-call="website.layout">
             <div class="oe_website_login_container" t-out="0"/>
         </t>
     </xpath>
-</template> -->
+</template>
 
 <!-- Area for blocks shared by all pages (e.g. all pages popups) -->
 <template id="shared_blocks" inherit_id="website.layout" name="Shared blocks">
