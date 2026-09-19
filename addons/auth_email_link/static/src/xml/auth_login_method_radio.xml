@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="auth_email_link.AuthLoginMethodRadio">
+        <div class="o_auth_login_method_options w-100">
+            <t t-foreach="items" t-as="item" t-key="item[0]">
+                <div class="d-flex py-3 border-bottom">
+                    <div class="form-check pt-1 me-3">
+                        <input class="form-check-input"
+                               type="radio"
+                               t-att-id="(props.id || props.name || 'auth_login_method') + '_' + item[0]"
+                               t-att-name="props.name || 'auth_login_method'"
+                               t-att-value="item[0]"
+                               t-att-checked="value === item[0]"
+                               t-att-disabled="props.readonly || isOptionDisabled(item[0])"
+                               t-on-change="onChange"/>
+                    </div>
+                    <label class="flex-grow-1 mb-0"
+                           t-att-for="(props.id || props.name || 'auth_login_method') + '_' + item[0]"
+                           t-att-class="{'text-muted': isOptionDisabled(item[0])}">
+                        <div class="fw-bold">
+                            <t t-esc="item[1]"/>
+                        </div>
+                        <div class="text-muted mt-1">
+                            <t t-esc="description(item[0])"/>
+                        </div>
+                        <div t-if="blocker(item[0])"
+                             class="alert alert-warning py-2 px-3 mt-2 mb-0 d-inline-block">
+                            <i class="fa fa-info-circle me-2"/>
+                            <t t-esc="blocker(item[0])"/>
+                        </div>
+                    </label>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

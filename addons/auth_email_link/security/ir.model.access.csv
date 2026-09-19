@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_auth_email_login_token_system,auth.email.login.token system,model_auth_email_login_token,base.group_system,1,1,1,1
+
+access_auth_authentication_settings_system,auth.authentication.settings system,auth_email_link.model_auth_authentication_settings,base.group_system,1,1,1,1
