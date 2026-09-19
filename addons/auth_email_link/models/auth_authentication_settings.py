@@ -20,7 +20,6 @@ class AuthAuthenticationSettings(models.Model):
             ("password", "Password"),
             ("email_link", "Email verification link"),
             ("both", "Both"),
-            ("oauth_only", "OAuth only"),
         ],
         string="Login method",
         required=True,
@@ -28,10 +27,10 @@ class AuthAuthenticationSettings(models.Model):
     )
     auth_email_link_ttl = fields.Integer(
         string="Verification link validity (minutes)",
-        required=True,
         default=10,
     )
     auth_admin_has_valid_email = fields.Boolean(compute="_compute_requirements")
+    auth_outbound_email_ready = fields.Boolean(compute="_compute_requirements")
     auth_admin_has_active_oauth = fields.Boolean(compute="_compute_requirements")
 
     @api.model
@@ -41,7 +40,18 @@ class AuthAuthenticationSettings(models.Model):
     @api.model
     def _admin_has_valid_email(self):
         admin = self._system_admin()
-        return bool(admin and admin.active and admin.email and email_normalize(admin.email))
+        return bool(
+            admin
+            and admin.active
+            and admin.email
+            and email_normalize(admin.email)
+        )
+
+    @api.model
+    def _outbound_email_ready(self):
+        return bool(self.env["ir.mail_server"].sudo().search_count([
+            ("active", "=", True),
+        ]))
 
     @api.model
     def _admin_has_active_oauth(self):
@@ -56,31 +66,52 @@ class AuthAuthenticationSettings(models.Model):
 
     @api.depends_context("uid")
     def _compute_requirements(self):
-        email_ok = self._admin_has_valid_email()
+        admin_email_ok = self._admin_has_valid_email()
+        outbound_email_ok = self._outbound_email_ready()
         oauth_ok = self._admin_has_active_oauth()
         for record in self:
-            record.auth_admin_has_valid_email = email_ok
+            record.auth_admin_has_valid_email = admin_email_ok
+            record.auth_outbound_email_ready = outbound_email_ok
             record.auth_admin_has_active_oauth = oauth_ok
 
     @api.constrains("auth_email_link_ttl")
     def _check_ttl(self):
         for record in self:
-            if not 1 <= record.auth_email_link_ttl <= 60:
+            if record.auth_email_link_ttl and not 1 <= record.auth_email_link_ttl <= 60:
                 raise ValidationError(
                     _("Verification link validity must be between 1 and 60 minutes.")
                 )
 
-    def action_save(self):
+    def _validate_authentication_settings(self):
+        for record in self:
+            if record.auth_login_method in ("email_link", "both"):
+                blockers = []
+                if not record._admin_has_valid_email():
+                    blockers.append(_("a valid email address on the System Administrator"))
+                if not record._outbound_email_ready():
+                    blockers.append(_("an active outgoing mail server"))
+                if blockers:
+                    raise ValidationError(
+                        _("Email verification login requires %s.") % _(" and ").join(blockers)
+                    )
+
+    def _sync_authentication_parameters(self):
         self.ensure_one()
-        if self.auth_login_method in ("email_link", "both") and not self._admin_has_valid_email():
-            raise ValidationError(
-                _("Email verification login requires a valid email on the System Administrator user.")
-            )
-        if self.auth_login_method == "oauth_only" and not self._admin_has_active_oauth():
-            raise ValidationError(
-                _("OAuth only requires the System Administrator to be linked to an enabled OAuth provider.")
-            )
         params = self.env["ir.config_parameter"].sudo()
         params.set_param("auth_email_link.login_method", self.auth_login_method)
-        params.set_param("auth_email_link.ttl_minutes", self.auth_email_link_ttl)
+        params.set_param("auth_email_link.ttl_minutes", self.auth_email_link_ttl or 10)
+
+    def write(self, vals):
+        result = super().write(vals)
+        for record in self:
+            record._validate_authentication_settings()
+            record._sync_authentication_parameters()
+        return result
+
+    def action_save(self):
+        self.ensure_one()
+        if not self.auth_email_link_ttl:
+            self.auth_email_link_ttl = 10
+        self._validate_authentication_settings()
+        self._sync_authentication_parameters()
         return {"type": "ir.actions.client", "tag": "reload"}

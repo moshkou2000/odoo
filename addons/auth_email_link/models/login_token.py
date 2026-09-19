@@ -33,17 +33,30 @@ class EmailLoginToken(models.Model):
         ]).write({"used_at": now})
 
         raw = secrets.token_urlsafe(48)
-        record = self.sudo().create({
+        self.sudo().create({
             "user_id": user.id,
             "token_hash": self._hash(raw),
             "expires_at": now + timedelta(minutes=ttl),
         })
-        record.raw_token = raw
-        return record
+        # Return the raw token only to the caller. It is never stored on the ORM
+        # record or in the database; only its SHA-256 hash is persisted.
+        return raw
 
     @staticmethod
     def _hash(token):
         return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    @api.model
+    def get_user(self, token):
+        if not token:
+            return self.env["res.users"]
+        record = self.sudo().search([
+            ("token_hash", "=", self._hash(token)),
+            ("used_at", "=", False),
+            ("expires_at", ">", fields.Datetime.now()),
+            ("user_id.active", "=", True),
+        ], limit=1)
+        return record.user_id if record else self.env["res.users"]
 
     @api.model
     def get_login(self, token):
@@ -57,17 +70,33 @@ class EmailLoginToken(models.Model):
 
     @api.model
     def consume_for_user(self, token, user_id):
+        if not token or not user_id:
+            return False
+
+        token_hash = self._hash(token)
+        now = fields.Datetime.now()
+
+        # Resolve the token with ORM first so Odoo handles datetime conversion and
+        # record rules consistently. The SQL UPDATE remains the atomic single-use gate.
+        record = self.sudo().search([
+            ("token_hash", "=", token_hash),
+            ("user_id", "=", user_id),
+            ("used_at", "=", False),
+            ("expires_at", ">", now),
+            ("user_id.active", "=", True),
+        ], limit=1)
+        if not record:
+            return False
+
         self.env.cr.execute(
             """
             UPDATE auth_email_login_token
-               SET used_at = NOW()
-             WHERE token_hash = %s
-               AND user_id = %s
+               SET used_at = %s
+             WHERE id = %s
                AND used_at IS NULL
-               AND expires_at > NOW()
              RETURNING id
             """,
-            [self._hash(token), user_id],
+            [now, record.id],
         )
         return bool(self.env.cr.fetchone())
 

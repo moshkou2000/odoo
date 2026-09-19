@@ -12,6 +12,7 @@
 
                     <field name="name" invisible="1"/>
                     <field name="auth_admin_has_valid_email" invisible="1"/>
+                    <field name="auth_outbound_email_ready" invisible="1"/>
                     <field name="auth_admin_has_active_oauth" invisible="1"/>
 
                     <group>
@@ -19,7 +20,7 @@
                             <field name="auth_login_method"
                                    nolabel="1"
                                    widget="auth_login_method_radio"
-                                   options="{'email_ready_field': 'auth_admin_has_valid_email', 'oauth_ready_field': 'auth_admin_has_active_oauth'}"/>
+                                   options="{'email_ready_field': 'auth_outbound_email_ready', 'oauth_ready_field': 'auth_admin_has_active_oauth'}"/>
                         </group>
                     </group>
 

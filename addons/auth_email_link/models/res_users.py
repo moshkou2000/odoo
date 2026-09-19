@@ -13,14 +13,15 @@ class ResUsers(models.Model):
             if mode not in ("email_link", "both"):
                 raise AccessDenied()
 
+            self.ensure_one()
             token = credential.get("token")
             if not token or not self.env["auth.email.login.token"].sudo().consume_for_user(
-                token, self.env.user.id
+                token, self.id
             ):
                 raise AccessDenied()
 
             return {
-                "uid": self.env.user.id,
+                "uid": self.id,
                 "auth_method": "email_link",
                 "mfa": "default",
             }

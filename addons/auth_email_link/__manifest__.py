@@ -1,6 +1,6 @@
 {
     "name": "Email Link Authentication",
-    "version": "19.0.1.16.0",
+    "version": "19.0.1.26.0",
     "category": "Authentication",
     "summary": "Configurable password, email-link and OAuth-only authentication",
     "license": "LGPL-3",

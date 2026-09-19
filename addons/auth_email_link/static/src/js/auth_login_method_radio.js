@@ -10,9 +10,20 @@ export class AuthLoginMethodRadio extends RadioField {
         return this.props.options || this.props.fieldInfo?.options || {};
     }
 
+    get visibleItems() {
+        return this.items.filter((item) => item[0] !== "oauth_only");
+    }
+
+    get adminEmailReady() {
+        return Boolean(this.props.record?.data?.auth_admin_has_valid_email);
+    }
+
+    get outboundEmailReady() {
+        return Boolean(this.props.record?.data?.auth_outbound_email_ready);
+    }
+
     get emailReady() {
-        const fieldName = this.widgetOptions.email_ready_field || "auth_admin_has_valid_email";
-        return Boolean(this.props.record?.data?.[fieldName]);
+        return this.adminEmailReady && this.outboundEmailReady;
     }
 
     get oauthReady() {
@@ -30,6 +41,12 @@ export class AuthLoginMethodRadio extends RadioField {
         return false;
     }
 
+    async selectLoginMethod(ev) {
+        await this.props.record.update({
+            [this.props.name]: ev.target.value,
+        });
+    }
+
     description(value) {
         return {
             password: "Keeps Odoo's standard username/login and password form unchanged.",
@@ -40,8 +57,15 @@ export class AuthLoginMethodRadio extends RadioField {
     }
 
     blocker(value) {
-        if ((value === "email_link" || value === "both") && !this.emailReady) {
-            return "Not available: The System Administrator does not have a valid email address.";
+        if (value === "email_link" || value === "both") {
+            const blockers = [];
+            if (!this.adminEmailReady) {
+                blockers.push("System Administrator needs a valid email address.");
+            }
+            if (!this.outboundEmailReady) {
+                blockers.push("Configure an active outgoing mail server.");
+            }
+            return blockers.length ? `Not available: ${blockers.join(" ")}` : "";
         }
         if (value === "oauth_only" && !this.oauthReady) {
             return "Not available: The System Administrator is not linked to an enabled OAuth provider.";

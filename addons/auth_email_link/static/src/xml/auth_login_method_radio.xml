@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="auth_email_link.AuthLoginMethodRadio">
         <div class="o_auth_login_method_options w-100">
-            <t t-foreach="items" t-as="item" t-key="item[0]">
+            <t t-foreach="visibleItems" t-as="item" t-key="item[0]">
                 <div class="d-flex py-3 border-bottom">
                     <div class="form-check pt-1 me-3">
                         <input class="form-check-input"
@@ -12,7 +12,7 @@
                                t-att-value="item[0]"
                                t-att-checked="value === item[0]"
                                t-att-disabled="props.readonly || isOptionDisabled(item[0])"
-                               t-on-change="onChange"/>
+                               t-on-change="selectLoginMethod"/>
                     </div>
                     <label class="flex-grow-1 mb-0"
                            t-att-for="(props.id || props.name || 'auth_login_method') + '_' + item[0]"
