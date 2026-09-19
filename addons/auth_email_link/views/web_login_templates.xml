@@ -25,6 +25,7 @@
                 <input type="email"
                        name="email_login"
                        id="email_login"
+                       t-att-value="login or ''"
                        class="form-control"
                        placeholder="Enter your email"
                        autocomplete="email"

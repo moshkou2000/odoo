@@ -72,6 +72,18 @@ class EmailAuthLogin(OAuthLogin):
         response.qcontext["auth_email_admin_ready"] = _outbound_email_ready()
         response.qcontext["auth_oauth_admin_ready"] = _admin_has_active_oauth()
 
+
+    @http.route("/auth/email-link/user-email", type="jsonrpc", auth="none", methods=["POST"])
+    def user_email(self, login=None, **kwargs):
+        mode = _effective_mode()
+        if mode not in ("email_link", "both") or not login:
+            return {"email": ""}
+        user = request.env["res.users"].sudo().search(
+            [("active", "=", True), ("login", "=", login)],
+            limit=1,
+        )
+        return {"email": user.email or "" if user else ""}
+
     def _email_link_request(self, redirect=None):
         mode = _effective_mode()
         if mode not in ("email_link", "both") or not _admin_has_valid_email() or not _outbound_email_ready():

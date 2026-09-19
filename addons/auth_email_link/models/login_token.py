@@ -15,9 +15,10 @@ class EmailLoginToken(models.Model):
     expires_at = fields.Datetime(required=True, index=True)
     used_at = fields.Datetime(index=True, copy=False)
 
-    _sql_constraints = [
-        ("token_hash_unique", "unique(token_hash)", "Login token must be unique.")
-    ]
+    _token_hash_unique = models.Constraint(
+        "UNIQUE(token_hash)",
+        "Login token must be unique.",
+    )
 
     @api.model
     def create_for_user(self, user):

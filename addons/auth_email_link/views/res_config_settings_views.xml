@@ -54,10 +54,11 @@
         <field name="context">{'form_view_initial_mode': 'edit'}</field>
     </record>
 
-    <menuitem id="menu_authentication_settings"
-              name="Authentication"
-              parent="base.menu_users"
-              sequence="25"
-              action="action_authentication_settings"
-              groups="base.group_system"/>
+    <record id="menu_authentication_settings" model="ir.ui.menu">
+        <field name="name">Authentication</field>
+        <field name="parent_id" ref="base.menu_users"/>
+        <field name="sequence">25</field>
+        <field name="action" ref="action_authentication_settings"/>
+        <field name="group_ids" eval="[Command.set([ref('base.group_no_one')])]"/>
+    </record>
 </odoo>
